@@ -17,15 +17,27 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
     //set masterpage
     getPage(url, function(pageData){
-        document.write(pageData);
-        var sections = document.querySelectorAll('[sj-insert]');
-        for(var i = 0; i < sections.length; i++){
-            var section = sections[i];
-            var sectionIndex = lookup.indexOf(section.attributes['sj-insert'].value);
-            if(sectionIndex >= 0){
-                section.appendChild(insertionsHTML[sectionIndex].obj);
-            }
-        }
+        var scrubJay = document.getElementById('scriptjay');
+        var scrubJayLocation = scrubJay.getAttribute('src');
+        var newPageData = pageData.substring(0,pageData.indexOf("</head>")) + "<script src='"+ scrubJayLocation+ "'></script>" + pageData.substring(pageData.indexOf("</head>"));
+        var test = newPageData;
+        //document.write(newPageData);
+        var head = document.createElement('head');
+        document.head.removeChild(document.head.firstChild);
+        //
+        //add scriptjay itself to header
+        var newScrubJay = document.createElement('script');
+        //newScrubJay.setAttribute("src", scrubJayLocation);
+        //document.head.appendChild(newScrubJay);
+        //
+        //var sections = document.querySelectorAll('[sj-insert]');
+        //for(var i = 0; i < sections.length; i++){
+        //    var section = sections[i];
+        //    var sectionIndex = lookup.indexOf(section.attributes['sj-insert'].value);
+        //    if(sectionIndex >= 0){
+        //        section.appendChild(insertionsHTML[sectionIndex].obj);
+        //    }
+        //}
     });
 
     function getPage(url, callback){

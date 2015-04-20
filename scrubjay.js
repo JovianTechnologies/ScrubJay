@@ -1,25 +1,27 @@
 document.addEventListener("DOMContentLoaded", function(event) {
+    //todo: Hide all elements when initially loaded so there is no flashing of page data
+
     //get sectons to be inserted into template
-    var insertions = document.querySelectorAll('[scrub-section]');
+    var insertions = document.querySelectorAll('[sj-section]');
     var insertionsHTML = [];
     var lookup = []; //object to make lookups against insertionsHTML faster
     for(var i = 0; i < insertions.length; i++){
         var insertion = insertions[i];
 
-        insertionsHTML.push({sectionName : insertion.attributes['scrub-section'].value, obj:insertion});
-        lookup.push(insertion.attributes['scrub-section'].value);
+        insertionsHTML.push({sectionName : insertion.attributes['sj-section'].value, obj:insertion});
+        lookup.push(insertion.attributes['sj-section'].value);
     }
 
     var masterPage = document.all[3].firstChild.data;
-    var url = getFileName(masterPage);
+    var url = parseFileName(masterPage);
 
     //set masterpage
     getPage(url, function(pageData){
         document.write(pageData);
-        var sections = document.querySelectorAll('[scrub-insert]');
+        var sections = document.querySelectorAll('[sj-insert]');
         for(var i = 0; i < sections.length; i++){
             var section = sections[i];
-            var sectionIndex = lookup.indexOf(section.attributes['scrub-insert'].value);
+            var sectionIndex = lookup.indexOf(section.attributes['sj-insert'].value);
             if(sectionIndex >= 0){
                 section.appendChild(insertionsHTML[sectionIndex].obj);
             }
@@ -37,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
         request.send(null);
     }
 
-    function getFileName(requestedFile){
+    function parseFileName(requestedFile){
         return requestedFile.substring(requestedFile.indexOf('("') + 2, requestedFile.indexOf('")'));
     }
 });

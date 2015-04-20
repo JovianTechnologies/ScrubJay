@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
         lookup.push(insertion.attributes['sj-section'].value);
     }
 
-    var masterPage = document.all[3].firstChild.data;
+    var masterPage = document.body.firstChild.data;
     var url = parseFileName(masterPage);
 
     //set masterpage

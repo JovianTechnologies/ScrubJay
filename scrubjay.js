@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     for(var i = 0; i < insertions.length; i++){
         var insertion = insertions[i];
 
-        insertionsHTML.push({sectionName : insertion.attributes['scrub-section'].value, html:insertion});
+        insertionsHTML.push({sectionName : insertion.attributes['scrub-section'].value, obj:insertion});
         lookup.push(insertion.attributes['scrub-section'].value);
     }
 
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
             var section = sections[i];
             var sectionIndex = lookup.indexOf(section.attributes['scrub-insert'].value);
             if(sectionIndex >= 0){
-                section.appendChild(insertionsHTML[sectionIndex].html);
+                section.appendChild(insertionsHTML[sectionIndex].obj);
             }
         }
     });

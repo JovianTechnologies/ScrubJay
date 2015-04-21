@@ -1,15 +1,22 @@
 document.addEventListener("DOMContentLoaded", function(event) {
     ScrubJay.init();
+
+    //remove reference so that it can't be accidentally manipulated
+    window.ScrubJay = null;
 });
 
 (function(window, document){
-    //todo: Hide all elements when initially loaded so there is no flashing of page data
     //todo: remove all hardcoded strings
     //todo: replace string comparisons with regular expressions
-    //todo: decide whether or not to implement without self loading
+    //todo: flashing still occurring, speed is better but want it gone
 
+    //large css framewoks load slowly if linked via cdn etc., so place code in project for better performance
     window.ScrubJay = {
         init: function(){
+            //don't display body until the page has been altered with template
+            var body = document.getElementsByTagName("body")[0];
+            body.setAttribute("style", "display:none");
+
             var insertions = document.querySelectorAll('[sj-section]');
             var insertionsHTML = [];
             var lookup = []; //object to make lookups against insertionsHTML faster
@@ -21,29 +28,58 @@ document.addEventListener("DOMContentLoaded", function(event) {
             }
 
             var masterPage = document.body.firstChild.data;
-            var url = this.getMasterFileUrl(masterPage);
+            var url = this.getMasterPageUrl(masterPage);
 
             var self = this;
-            //set up page
-            this.getPage(url, function(pageData){
-                var page = self.parseMasterFileHead(pageData);
 
-                document.body.innerHTML = page.body;
-                document.head.innerHTML = page.head;
+            this.getMasterPage(url, function(pageData){
+                // convert page string into object
+                var parser = new DOMParser();
+                var pageObject = parser.parseFromString(pageData, "text/html");
+
+                document.head.innerHTML = pageObject.head.innerHTML;
+                document.body.innerHTML = pageObject.body.innerHTML;
+
+                //apply all attributes for head
+                self.setObjAttributes(pageObject.head.attributes, document.head);
+
+                //apply all attributes for html tag
+                var htmlObj = document.getElementsByTagName("html")[0];
+                var htmlAttrs =  [];
+                for(var i = 0; i < pageObject.childNodes.length; i++){
+                    var childNode = pageObject.childNodes[i];
+                    if(childNode.localName == "html")
+                        htmlAttrs = childNode.attributes;
+                };
+                self.setObjAttributes(htmlAttrs, htmlObj);
+
+                //set doctype if not null
+                //if(pageObject.doctype != null) document.doctype = "html";
+                //document.implementation.createDocument(null, 'html', )
+                var newDoctype = document.implementation.createDocumentType(
+                    pageObject.doctype.nodeName,
+                    pageObject.doctype.publicId,
+                    pageObject.doctype.systemId
+                );
+
+                document.doctype.parentNode.replaceChild(newDoctype,document.doctype);
 
                 //place section data into template
-                var sections = document.querySelectorAll('[sj-insert]');
-                for(var i = 0; i < sections.length; i++){
+                var sections = document.querySelectorAll('[sj-section]');
+                for(var i = 0; i < sections.length; i++) {
                     var section = sections[i];
-                    var sectionIndex = lookup.indexOf(section.attributes['sj-insert'].value);
-                    if(sectionIndex >= 0){
+                    var sectionIndex = lookup.indexOf(section.attributes['sj-section'].value);
+                    if (sectionIndex >= 0) {
                         var child = section.appendChild(insertionsHTML[sectionIndex].obj);
                         child.innerHTML = insertionsHTML[sectionIndex].innerH;
                     }
                 }
+
+                //display after page alteration complete
+                body.setAttribute("style", "display:block");
             });
         },
-        getPage: function(url, callback){
+        getMasterPage: function(url, callback){
             var request = new XMLHttpRequest();
             request.open("GET", url, true);
             request.setRequestHeader("Accept", "text/html");
@@ -54,23 +90,16 @@ document.addEventListener("DOMContentLoaded", function(event) {
             request.send(null);
         },
 
-        getMasterFileUrl: function(file){
+        getMasterPageUrl: function(file){
             var useDirecive = "@sj-use";
             return file.substring(file.indexOf(useDirecive) + useDirecive.length + 2, file.indexOf('")'));
         },
 
-        parseMasterFileHead: function(file){
-            //Copy body only and capture head data, which will be added after the body is set
-            var beginHeadStartTagLocation = file.indexOf("<head");
-            var tempPageData = file.substring(beginHeadStartTagLocation);
-            var endHeadStartTagLocation = tempPageData.indexOf(">");
-            var headEndTagLocation = file.indexOf("</head>");
-            var pageBody = file.substring(0, beginHeadStartTagLocation + endHeadStartTagLocation + 1) + file.substring(headEndTagLocation);
-            var pageHead = file.substring(beginHeadStartTagLocation + endHeadStartTagLocation + 6, headEndTagLocation);
-
-            //var headAttrs = pageBody.substring(beginHeadStartTagLocation, end);
-
-            return {head: pageHead, body: pageBody};
+        setObjAttributes: function(attrs, obj){
+            for(var i = 0; i < attrs.length; i++){
+                var attr = attrs[i];
+                obj.setAttribute(attr.nodeName, attr.nodeValue);
+            }
         }
     }
 })(window, document);

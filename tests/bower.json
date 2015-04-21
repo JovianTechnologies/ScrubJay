@@ -1,0 +1,16 @@
+{
+  "name": "tests",
+  "version": "0.0.0",
+  "homepage": "https://github.com/JovianTechnologies/ScrubJay",
+  "authors": [
+    "Eric Smallwood <smallwood.eric@ymail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

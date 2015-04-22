@@ -1,5 +1,6 @@
 <!DOCTYPE>
-<script id="scriptjay" src="../scrubjay.js"></script>
+<script src="bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../scrubjay.js"></script>
 @sj-use("master.html");
 
 <div sj-section="header">
@@ -8,3 +9,7 @@
 </div>
 <div sj-section="body">Body</div>
 <div sj-section="footer">Footer</div>
+
+@sj-section("body"){
+    Body
+}

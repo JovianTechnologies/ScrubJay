@@ -6,9 +6,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
 });
 
 (function(window, document){
-    //todo: remove all hardcoded strings
-    //todo: replace string comparisons with regular expressions
     //todo: flashing still occurring, speed is better but want it gone
+    //todo: create simple custom parser for DOM
 
     //large css framewoks load slowly if linked via cdn etc., so place code in project for better performance
     window.ScrubJay = {
@@ -31,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
             var url = this.getMasterPageUrl(masterPage);
 
             var self = this;
-
+            var myCallback =
             this.getMasterPage(url, function(pageData){
                 // convert page string into object
                 var parser = new DOMParser();
@@ -53,15 +52,12 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 };
                 self.setObjAttributes(htmlAttrs, htmlObj);
 
-                //set doctype if not null
-                //if(pageObject.doctype != null) document.doctype = "html";
-                //document.implementation.createDocument(null, 'html', )
+                //set Doctype, only works in ie 9+
                 var newDoctype = document.implementation.createDocumentType(
                     pageObject.doctype.nodeName,
                     pageObject.doctype.publicId,
                     pageObject.doctype.systemId
                 );
-
                 document.doctype.parentNode.replaceChild(newDoctype,document.doctype);
 
                 //place section data into template
@@ -85,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
             request.setRequestHeader("Accept", "text/html");
             request.onreadystatechange = function(){
                 if(request.readyState == 4 && request.status == 200)
-                    callback(request.response);
+                        callback(request.responseText);
             };
             request.send(null);
         },

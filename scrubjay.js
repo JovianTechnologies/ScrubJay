@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     //large css framewoks load slowly if linked via cdn etc., so place code in project for better performance
     window.ScrubJay = {
         init: function(){
+            var self = this;
+
             //don't display body until the page has been altered with template
             var body = document.getElementsByTagName("body")[0];
             body.setAttribute("style", "display:none");
@@ -29,12 +31,11 @@ document.addEventListener("DOMContentLoaded", function(event) {
             var masterPage = document.body.firstChild.data;
             var url = this.getMasterPageUrl(masterPage);
 
-            var self = this;
-            var myCallback =
             this.getMasterPage(url, function(pageData){
                 // convert page string into object
                 var parser = new DOMParser();
                 var pageObject = parser.parseFromString(pageData, "text/html");
+                var pageObject2 = SpiderParse.parse(pageData);
 
                 document.head.innerHTML = pageObject.head.innerHTML;
                 document.body.innerHTML = pageObject.body.innerHTML;
@@ -75,6 +76,12 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 body.setAttribute("style", "display:block");
             });
         },
+
+        /**
+         * Retrieve Master-page
+         * @param url
+         * @param callback
+         */
         getMasterPage: function(url, callback){
             var request = new XMLHttpRequest();
             request.open("GET", url, true);
@@ -85,7 +92,11 @@ document.addEventListener("DOMContentLoaded", function(event) {
             };
             request.send(null);
         },
-
+        /**
+         * Get Master-page URL from @sj-use portion of the page
+         * @param file
+         * @returns {string}
+         */
         getMasterPageUrl: function(file){
             var useDirecive = "@sj-use";
             return file.substring(file.indexOf(useDirecive) + useDirecive.length + 2, file.indexOf('")'));
@@ -97,5 +108,72 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 obj.setAttribute(attr.nodeName, attr.nodeValue);
             }
         }
+    };
+
+    window.SpiderParse = {
+        parse: function(htmlString){
+            var self = this;
+
+            var Child = function(){
+                this.attributes = [];
+                this.childNodes = [];
+                this.innerHTML = "";
+                this.name = "";
+                this.outerHTML = "";
+            };
+
+
+
+            /**
+             * Recursively find all tags in the document, and their children
+             * @param htmlString
+             * @param childList
+             * @returns {*}
+             */
+            (function getTags(htmlString, childList){
+                var startTagBeginLocation = htmlString.indexOf("<");
+                if(startTagBeginLocation >= 0 ){
+                    htmlString = htmlString.substring(startTagBeginLocation);
+                    startTagBeginLocation = 0;
+
+                    var child = new Child();
+
+                    //get tag name, check to see if there is a space after the tag name, if not there are no attributes
+                    var startTagEndLocation = htmlString.substring(startTagBeginLocation).indexOf(">");
+                    var firstSpaceLocation = htmlString.substring(startTagBeginLocation).indexOf(" ");
+                    var tagNameEndLocation = startTagEndLocation < firstSpaceLocation ? startTagEndLocation : firstSpaceLocation;
+                    var tagName = htmlString.substring(startTagBeginLocation + 1, tagNameEndLocation);
+
+                    child.name = tagName;
+
+                    var endTagBeginLocation = htmlString.indexOf("</" + tagName);
+                    if(endTagBeginLocation >= 0){
+                        //get children of this tag
+                        getTags(htmlString.substring(startTagEndLocation, endTagBeginLocation), child.childNodes);
+                        //add children of object to the object itself
+                        childList.push(child);
+
+                        //go to next sibling
+                        getTags(htmlString.substring(endTagBeginLocation + ("</" + tagName).length), childList);
+                    }else{
+                        childList.push(child);
+                        getTags(htmlString.substring(startTagEndLocation), childList);
+                    }
+                }
+            })(htmlString, this.html.children);
+
+            return this.html;
+        },
+        html: {
+            body: {},
+            children: [],
+            docType: {
+                name: "",
+                publicId:"",
+                systemId:""
+            },
+            head: {}
+        }
+
     }
 })(window, document);

@@ -115,14 +115,51 @@ document.addEventListener("DOMContentLoaded", function(event) {
             var self = this;
 
             var Child = function(){
-                this.attributes = [];
+                this.attrs = [];
                 this.childNodes = [];
                 this.innerHTML = "";
                 this.name = "";
                 this.outerHTML = "";
             };
 
+            /**
+             * Get all attributes and thier values from a tag
+             * @param tagString
+             * @param attrsList
+             */
+            function getTagAttributes(tagString, attrsList){
+                var delineatorsRegex = /\s|['"]|\s*\/?>/;
+                var attrLocation = tagString.search(delineatorsRegex);
+                if(tagString.search(/\s*\/?>$/) > 0 && attrLocation >= 0){
+                    tagString = tagString.substring(attrLocation + 1).trim();
+                    var attr = tagString.substring(0, tagString.search(delineatorsRegex));
+                    if(!attr.search(/\s*/)){
+                        //parse attribute name
+                        var assignmentOperatorRegex = /\s*=/;
+                        var assignmentOperatorLocation = attr.indexOf("=");
+                        var name = assignmentOperatorLocation >=0  ? attr.substring(0,assignmentOperatorLocation).trim() : attr;
 
+                        //parse attribute value
+                        tagString = tagString.substring(assignmentOperatorLocation + 1);
+                        var valueRegex = /^[^'"]*\s$|^["'].*["'](\s|\/|>)/;
+                        var value = assignmentOperatorLocation < 0 ? null : tagString.match(valueRegex)[0];
+                        var trimmedValue;
+                        //if the attribute value is a string remove the extra "'s
+                        if(typeof(value) == "string"){
+                            trimmedValue = value.trim().replace(/^"(.*)"$/, '$1');
+                        }
+
+                        attrsList.push({name: name, value: trimmedValue});
+                        if(assignmentOperatorLocation < 0){
+                            getTagAttributes(tagString.substring(tagString.indexOf(attr) + attr.length), attrsList);
+                        }else {
+                            getTagAttributes(tagString.substring(tagString.indexOf(trimmedValue) + trimmedValue.length), attrsList);
+                        }
+                    }
+                }else{
+
+                }
+            }
 
             /**
              * Recursively find all tags in the document, and their children
@@ -138,11 +175,14 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
                     var child = new Child();
 
-                    //get tag name, check to see if there is a space after the tag name, if not there are no attributes
-                    var startTagEndLocation = htmlString.substring(startTagBeginLocation).indexOf(">");
+                    //get tag by either finding a space or the end of the tag
+                    var startTagEndLocation = htmlString.substring(startTagBeginLocation).search(/\/?>/);
+                    var startTagEnd = htmlString.match(/\/?>/);
                     var firstSpaceLocation = htmlString.substring(startTagBeginLocation).indexOf(" ");
                     var tagNameEndLocation = startTagEndLocation < firstSpaceLocation ? startTagEndLocation : firstSpaceLocation;
                     var tagName = htmlString.substring(startTagBeginLocation + 1, tagNameEndLocation);
+
+                    getTagAttributes(htmlString.substring(startTagBeginLocation, startTagEndLocation) + startTagEnd, child.attrs);
 
                     child.name = tagName;
 

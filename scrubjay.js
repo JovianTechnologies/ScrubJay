@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 // convert page string into object
                 var parser = new DOMParser();
                 var pageObject = parser.parseFromString(pageData, "text/html");
-                var pageObject2 = SpiderParse.parse(pageData);
 
                 document.head.innerHTML = pageObject.head.innerHTML;
                 document.body.innerHTML = pageObject.body.innerHTML;
@@ -110,117 +109,5 @@ document.addEventListener("DOMContentLoaded", function(event) {
         }
     };
 
-    window.SpiderParse = {
-        parse: function(htmlString){
-            var self = this;
 
-            var Child = function(){
-                this.attrs = [];
-                this.childNodes = [];
-                this.innerHTML = "";
-                this.name = "";
-                this.outerHTML = "";
-            };
-
-            /**
-             * Get all attributes and thier values from a tag
-             * @param tagString
-             * @param attrsList
-             */
-            function getTagAttributes(tagString, attrsList){
-                var delineatorsRegex = /\s|['"]|\s*\/?>/;
-                var attrLocation = tagString.search(delineatorsRegex);
-                if(tagString.search(/\s*\/?>$/) > 0 && attrLocation >= 0){
-                    tagString = tagString.substring(attrLocation + 1).trim();
-                    var attr = tagString.substring(0, tagString.search(delineatorsRegex));
-                    if(!attr.search(/\s*/)){
-                        //parse attribute name
-                        var assignmentOperatorLocation = attr.indexOf("=");
-                        var name = assignmentOperatorLocation >=0  ? attr.substring(0,assignmentOperatorLocation).trim() : attr;
-
-                        //parse attribute value
-                        tagString = tagString.substring(assignmentOperatorLocation + 1);
-                        var valueRegex = /^[^'"]*[\s\/>]|^["'].*["'](\s|\/|>)?/;
-                        var value = assignmentOperatorLocation < 0 ? null : tagString.match(valueRegex)[0];
-                        var trimmedValue = value == null ? null : value.trim();
-
-                        //remove any extra "'s
-                        if(trimmedValue != null) {
-                            trimmedValue = trimmedValue.replace(/^"(.*)"$/, '$1');
-
-
-                            //if last character is / or > remove it
-                            if (trimmedValue.lastIndexOf("/") == trimmedValue.length - 2)
-                                trimmedValue = trimmedValue.substring(0, trimmedValue.lastIndexOf("/"));
-                            else if (trimmedValue.lastIndexOf(">") == trimmedValue.length - 1)
-                                trimmedValue = trimmedValue.substring(0, trimmedValue.lastIndexOf(">"));
-                        }
-
-                        attrsList.push({name: name, value: trimmedValue});
-                        if(assignmentOperatorLocation < 0){
-                            getTagAttributes(tagString.substring(tagString.indexOf(attr) + attr.length), attrsList);
-                        }else {
-                            getTagAttributes(tagString.substring(tagString.indexOf(trimmedValue) + trimmedValue.length), attrsList);
-                        }
-                    }
-                }else{
-
-                }
-            }
-
-            /**
-             * Recursively find all tags in the document, and their children
-             * @param htmlString
-             * @param childList
-             * @returns {*}
-             */
-            (function getTags(htmlString, childList){
-                var startTagBeginLocation = htmlString.indexOf("<");
-                if(startTagBeginLocation >= 0 ){
-                    htmlString = htmlString.substring(startTagBeginLocation);
-                    startTagBeginLocation = 0;
-
-                    var child = new Child();
-
-                    //get tag by either finding a space or the end of the tag
-                    var startTagEndLocation = htmlString.substring(startTagBeginLocation).search(/\/?>/);
-                    var startTagEnd = htmlString.match(/\/?>/);
-                    var firstSpaceLocation = htmlString.substring(startTagBeginLocation).indexOf(" ");
-                    var tagNameEndLocation = startTagEndLocation < firstSpaceLocation ? startTagEndLocation : firstSpaceLocation;
-                    var tagName = htmlString.substring(startTagBeginLocation + 1, tagNameEndLocation);
-
-                    getTagAttributes(htmlString.substring(startTagBeginLocation, startTagEndLocation) + startTagEnd, child.attrs);
-
-                    child.name = tagName;
-
-                    var endTagBeginLocation = htmlString.indexOf("</" + tagName);
-                    if(endTagBeginLocation >= 0){
-                        //get children of this tag
-                        getTags(htmlString.substring(startTagEndLocation, endTagBeginLocation), child.childNodes);
-                        //add children of object to the object itself
-                        childList.push(child);
-
-                        //go to next sibling
-                        getTags(htmlString.substring(endTagBeginLocation + ("</" + tagName).length), childList);
-                    }else{
-                        childList.push(child);
-                        getTags(htmlString.substring(startTagEndLocation), childList);
-                    }
-                }
-            })(htmlString, this.html.children);
-
-            return this.html;
-        },
-        html: {
-            body: {},
-            children: [],
-            docType: {
-                name: "",
-                publicId:"",
-                systemId:""
-            },
-            head: {}
-        }
-
-    }
 })(window, document);

@@ -135,18 +135,25 @@ document.addEventListener("DOMContentLoaded", function(event) {
                     var attr = tagString.substring(0, tagString.search(delineatorsRegex));
                     if(!attr.search(/\s*/)){
                         //parse attribute name
-                        var assignmentOperatorRegex = /\s*=/;
                         var assignmentOperatorLocation = attr.indexOf("=");
                         var name = assignmentOperatorLocation >=0  ? attr.substring(0,assignmentOperatorLocation).trim() : attr;
 
                         //parse attribute value
                         tagString = tagString.substring(assignmentOperatorLocation + 1);
-                        var valueRegex = /^[^'"]*\s$|^["'].*["'](\s|\/|>)/;
+                        var valueRegex = /^[^'"]*[\s\/>]|^["'].*["'](\s|\/|>)?/;
                         var value = assignmentOperatorLocation < 0 ? null : tagString.match(valueRegex)[0];
-                        var trimmedValue;
-                        //if the attribute value is a string remove the extra "'s
-                        if(typeof(value) == "string"){
-                            trimmedValue = value.trim().replace(/^"(.*)"$/, '$1');
+                        var trimmedValue = value == null ? null : value.trim();
+
+                        //remove any extra "'s
+                        if(trimmedValue != null) {
+                            trimmedValue = trimmedValue.replace(/^"(.*)"$/, '$1');
+
+
+                            //if last character is / or > remove it
+                            if (trimmedValue.lastIndexOf("/") == trimmedValue.length - 2)
+                                trimmedValue = trimmedValue.substring(0, trimmedValue.lastIndexOf("/"));
+                            else if (trimmedValue.lastIndexOf(">") == trimmedValue.length - 1)
+                                trimmedValue = trimmedValue.substring(0, trimmedValue.lastIndexOf(">"));
                         }
 
                         attrsList.push({name: name, value: trimmedValue});

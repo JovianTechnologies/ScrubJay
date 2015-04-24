@@ -1,3 +1,11 @@
+if (typeof Array.prototype.forEach != 'function') {
+    Array.prototype.forEach = function(callback){
+        for (var i = 0; i < this.length; i++){
+            callback.apply(this, [this[i], i, this]);
+        }
+    };
+}
+
 document.addEventListener("DOMContentLoaded", function(event) {
     ScrubJay.init();
 
@@ -34,9 +42,43 @@ document.addEventListener("DOMContentLoaded", function(event) {
             this.getMasterPage(url, function(pageData){
                 // convert page string into object
                 var parser = new DOMParser();
-                var pageObject = parser.parseFromString(pageData, "text/html");
 
-                document.head.innerHTML = pageObject.head.innerHTML;
+                var isIE9orOlder = (document.all && !window.atob);
+
+                var pageObject;
+                if(isIE9orOlder) {
+                    pageObject = SpiderParse.parse(pageData)
+
+                    var currentHeadTags = [];
+
+                    for(var i = 0; i < document.head.childElementCount; i++){
+                        currentHeadTags.push(document.head.children[i]);
+                    }
+
+                    //remove the current head tags from head so we can add them to the bottom after adding
+                    //the master page scripts
+                    currentHeadTags.forEach(function(tag){
+                        document.head.removeChild(tag);
+                    });
+
+                    //Add tags from masterpage
+                    pageObject.head.childNodes.forEach(function(tag){
+                        var newTag = document.createElement(tag.name);
+                        tag.attributes.forEach(function(attr){
+                            newTag[attr.name] = attr.value;
+                        });
+                        document.head.appendChild(newTag);
+                    });
+
+                    //Reapply child page tags
+                    currentHeadTags.forEach(function(tag){
+                        document.head.appendChild(tag);
+                    });
+                }else {
+                    pageObject = parser.parseFromString(pageData, "text/html");
+                    document.head.innerHTML = pageObject.head.innerHTML;
+                }
+
                 document.body.innerHTML = pageObject.body.innerHTML;
 
                 //apply all attributes for head
@@ -53,12 +95,14 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 self.setObjAttributes(htmlAttrs, htmlObj);
 
                 //set Doctype, only works in ie 9+
-                var newDoctype = document.implementation.createDocumentType(
-                    pageObject.doctype.nodeName,
-                    pageObject.doctype.publicId,
-                    pageObject.doctype.systemId
-                );
-                document.doctype.parentNode.replaceChild(newDoctype,document.doctype);
+                if(document.addEventListener){
+                    //var newDoctype = document.implementation.createDocumentType(
+                    //    pageObject.doctype.nodeName,
+                    //    pageObject.doctype.publicId,
+                    //    pageObject.doctype.systemId
+                    //);
+                    //document.doctype.parentNode.replaceChild(newDoctype,document.doctype);
+                }
 
                 //place section data into template
                 var sections = document.querySelectorAll('[sj-section]');
